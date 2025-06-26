@@ -62,6 +62,18 @@ The `environment.yml` includes all necessary dependencies:
 
 ## Usage
 
+
+
+### 0. Environment Variables
+
+Create a `.env` file in the project root with your huggingface token.
+
+```bash
+HF_TOKEN=<your_huggingface_token>
+```
+
+
+
 ### 1. Add or modify training data [Optional]
 
 Add your training examples to `data/docstring_dataset.py`:

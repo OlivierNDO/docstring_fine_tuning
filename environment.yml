@@ -25,3 +25,4 @@ dependencies:
       - bitsandbytes>=0.41.0
       - "unsloth[torch]"
       - flask
+      - python-dotenv
