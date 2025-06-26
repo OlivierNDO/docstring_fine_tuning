@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TinyLlama Model Comparison</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+        
+        .header {
+            background: linear-gradient(45deg, #2c3e50, #34495e);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 2px,
+                rgba(255, 255, 255, 0.05) 2px,
+                rgba(255, 255, 255, 0.05) 4px
+            );
+            animation: shimmer 10s linear infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .status-indicator {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            z-index: 2;
+            transition: all 0.3s ease;
+        }
+        
+        .status-loading {
+            background: #ffc107;
+            color: #856404;
+        }
+        
+        .status-ready {
+            background: #28a745;
+            color: white;
+        }
+        
+        .status-error {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .prompt-banner {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 30px;
+            border-left: 5px solid #ffd700;
+            margin: 0;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .prompt-banner::before {
+            content: '';
+            position: absolute;
+            left: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.5em;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        .prompt-banner::after {
+            content: '';
+            position: absolute;
+            right: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.5em;
+            animation: pulse 2s ease-in-out infinite 0.5s;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 0.6; transform: translateY(-50%) scale(1); }
+            50% { opacity: 1; transform: translateY(-50%) scale(1.1); }
+        }
+        
+        .prompt-label {
+            font-size: 0.9em;
+            font-weight: bold;
+            color: #ffd700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+        }
+        
+        .prompt-text {
+            font-size: 1.3em;
+            font-weight: bold;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            letter-spacing: 0.5px;
+            margin: 0 0 8px 0;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .prompt-description {
+            font-size: 0.95em;
+            opacity: 0.85;
+            font-style: italic;
+            color: #e8e8e8;
+            margin: 0;
+        }
+        
+        .input-section {
+            padding: 30px;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+        }
+        
+        .input-label {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            display: block;
+        }
+        
+        .code-input {
+            width: 100%;
+            height: 200px;
+            padding: 20px;
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            background: #ffffff;
+            resize: vertical;
+            transition: all 0.3s ease;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+            line-height: 1.5;
+        }
+        
+        .code-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1), inset 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .compare-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .compare-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .compare-btn:active {
+            transform: translateY(0);
+        }
+        
+        .compare-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .comparison-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            min-height: 500px;
+        }
+        
+        .model-panel {
+            padding: 30px;
+            border-right: 2px solid #e9ecef;
+        }
+        
+        .model-panel:last-child {
+            border-right: none;
+        }
+        
+        .model-title {
+            font-size: 1.4em;
+            font-weight: bold;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e9ecef;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .original-model {
+            color: #e74c3c;
+        }
+        
+        .finetuned-model {
+            color: #27ae60;
+        }
+        
+        .model-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        
+        .original-icon {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+        }
+        
+        .finetuned-icon {
+            background: linear-gradient(45deg, #27ae60, #229954);
+        }
+        
+        .response-area {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 20px;
+            min-height: 350px;
+            max-height: 500px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            overflow-y: auto;
+            position: relative;
+        }
+        
+        .placeholder {
+            color: #666;
+            font-style: italic;
+            text-align: center;
+            margin-top: 100px;
+        }
+        
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-style: italic;
+            height: 100%;
+        }
+        
+        .loading::after {
+            content: '';
+            width: 20px;
+            height: 20px;
+            margin-left: 10px;
+            border: 2px solid #e9ecef;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error {
+            color: #e74c3c;
+            background: #fdf2f2;
+            border: 1px solid #fecaca;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        
+        .stats {
+            margin-top: 15px;
+            padding: 10px;
+            background: #e9ecef;
+            border-radius: 8px;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        @media (max-width: 768px) {
+            .comparison-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .model-panel {
+                border-right: none;
+                border-bottom: 2px solid #e9ecef;
+            }
+            
+            .model-panel:last-child {
+                border-bottom: none;
+            }
+            
+            .prompt-banner::before,
+            .prompt-banner::after {
+                display: none;
+            }
+            
+            .prompt-text {
+                font-size: 1.1em;
+            }
+            
+            .prompt-label {
+                font-size: 0.8em;
+                letter-spacing: 1px;
+            }
+            
+            .prompt-description {
+                font-size: 0.85em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div id="statusIndicator" class="status-indicator status-loading">Loading Models...</div>
+            <h1>🦙 TinyLlama Fine-Tuning Comparison</h1>
+            <p>Compare the fine-tuned model with the original TinyLlama</p>
+        </div>
+        
+        <div class="prompt-banner">
+            <div class="prompt-label">AI MODEL PROMPT:</div>
+            <h2 class="prompt-text">"Generate a Python docstring for the following function:"</h2>
+        </div>
+        
+        <div class="input-section">
+            <label class="input-label">Function for docstring generation:</label>
+            <textarea 
+                class="code-input" 
+                id="codeInput" 
+                placeholder="def example_function(param):&#10;    # Your code here&#10;    return param * 2"
+            ></textarea>
+            
+            <div class="controls">
+                <button class="compare-btn" id="compareBtn" onclick="compareModels()" disabled>
+                    ⚡ Compare Models
+                </button>
+            </div>
+        </div>
+        
+        <div class="comparison-section">
+            <div class="model-panel">
+                <div class="model-title original-model">
+                    <span class="model-icon original-icon"></span>
+                    Original TinyLlama
+                </div>
+                <div class="response-area" id="originalResponse">
+                    <div class="placeholder">
+                        Enter code above and click "Compare Models" to see the original model's analysis
+                    </div>
+                </div>
+                <div class="stats" id="originalStats" style="display: none;"></div>
+            </div>
+            
+            <div class="model-panel">
+                <div class="model-title finetuned-model">
+                    <span class="model-icon finetuned-icon"></span>
+                    Fine-tuned
+                </div>
+                <div class="response-area" id="finetunedResponse">
+                    <div class="placeholder">
+                        Enter code above and click "Compare Models" to see your fine-tuned model's analysis
+                    </div>
+                </div>
+                <div class="stats" id="finetunedStats" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check model loading status periodically
+        function checkStatus() {
+            fetch('/status')
+                .then(response => response.json())
+                .then(data => {
+                    const statusIndicator = document.getElementById('statusIndicator');
+                    const compareBtn = document.getElementById('compareBtn');
+                    
+                    if (data.models_loaded) {
+                        statusIndicator.textContent = 'Models Ready';
+                        statusIndicator.className = 'status-indicator status-ready';
+                        compareBtn.disabled = false;
+                    } else {
+                        statusIndicator.textContent = 'Loading Models...';
+                        statusIndicator.className = 'status-indicator status-loading';
+                        compareBtn.disabled = true;
+                        // Check again in 2 seconds
+                        setTimeout(checkStatus, 2000);
+                    }
+                })
+                .catch(error => {
+                    const statusIndicator = document.getElementById('statusIndicator');
+                    statusIndicator.textContent = 'Error Loading Models';
+                    statusIndicator.className = 'status-indicator status-error';
+                    console.error('Status check failed:', error);
+                });
+        }
+
+        // Start checking status immediately
+        checkStatus();
+
+        async function compareModels() {
+            const code = document.getElementById('codeInput').value.trim();
+            if (!code) {
+                alert('Please enter some Python code first!');
+                return;
+            }
+
+            const compareBtn = document.getElementById('compareBtn');
+            const originalResponse = document.getElementById('originalResponse');
+            const finetunedResponse = document.getElementById('finetunedResponse');
+            const originalStats = document.getElementById('originalStats');
+            const finetunedStats = document.getElementById('finetunedStats');
+
+            // Disable button and show loading
+            compareBtn.disabled = true;
+            compareBtn.textContent = '🔄 Analyzing...';
+            
+            originalResponse.innerHTML = '<div class="loading">Analyzing with original model</div>';
+            finetunedResponse.innerHTML = '<div class="loading">Analyzing with fine-tuned model</div>';
+            
+            originalStats.style.display = 'none';
+            finetunedStats.style.display = 'none';
+
+            try {
+                const response = await fetch('/compare', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ code: code })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Request failed');
+                }
+
+                const data = await response.json();
+
+                // Display results
+                originalResponse.textContent = data.original.response;
+                finetunedResponse.textContent = data.finetuned.response;
+                
+                // Show stats
+                originalStats.textContent = `Response time: ${data.original.time_ms}ms | Tokens: ${data.original.tokens}`;
+                finetunedStats.textContent = `Response time: ${data.finetuned.time_ms}ms | Tokens: ${data.finetuned.tokens}`;
+                
+                originalStats.style.display = 'block';
+                finetunedStats.style.display = 'block';
+
+            } catch (error) {
+                originalResponse.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+                finetunedResponse.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            } finally {
+                // Re-enable button
+                compareBtn.disabled = false;
+                compareBtn.textContent = '⚡ Compare Models';
+            }
+        }
+
+        // Allow Enter key to trigger comparison (Ctrl+Enter for multi-line)
+        document.getElementById('codeInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && e.ctrlKey) {
+                compareModels();
+            }
+        });
+    </script>
+</body>
+</html>

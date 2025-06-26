@@ -1,0 +1,12 @@
+# Environment variables
+.env
+
+# Python
+__pycache__/
+*.pyc
+
+# Model files
+tiny_llama_finetuned/
+
+# Logs
+*.log
