@@ -1,4 +1,4 @@
-# TinyLlama Fine-Tuning Pipeline
+# 🦙 TinyLlama Fine-Tuning Pipeline
 
 ![Python](https://img.shields.io/badge/python-3.10+-blue.svg?style=for-the-badge&logo=python&logoColor=white)
 ![PyTorch](https://img.shields.io/badge/PyTorch-2.2.0-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white)
